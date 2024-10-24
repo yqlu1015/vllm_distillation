@@ -13,7 +13,7 @@ model = LlavaNextForConditionalGeneration.from_pretrained(model_name, torch_dtyp
 processor = AutoProcessor.from_pretrained(model_name)
 processor.tokenizer.padding_side = "left"
 if PEFT_INFERENCE:
-    lora_adapter = "sft-llava-v1.6-mistral-7b_10-22-01-48"  # Path to the fine-tuned adapter
+    lora_adapter = "sft-llava-v1.6-mistral-7b_10-24-03-46"  # Path to the fine-tuned adapter
     model = PeftModel.from_pretrained(model, lora_adapter)
 
 # Load & preprocess dataset
@@ -25,6 +25,9 @@ test = dataset.filter(lambda x: x['split'] == 'test')
 num_inference = 100
 test = test.select(list(range(num_inference)))
 
+# instruction = 'Generate a descriptive caption for the following image. Keep the caption concise and informative.'
+instruction = 'Briefly describe this image in one or two sentences.'
+
 
 def process_func(example):
     # image = example['image']
@@ -35,7 +38,7 @@ def process_func(example):
             'role': 'user',
             'content': [
                 {'type': 'image'},
-                {'type': 'text', 'text': 'Briefly describe this image in one or two sentences.'}
+                {'type': 'text', 'text': instruction}
             ]
         }
     ]
@@ -56,24 +59,23 @@ predictions = []
 references = []
 batch_size = 10
 cnt = 0
-for i in range(len(test)//batch_size):
-    batch = test[i*batch_size: min((i+1)*batch_size, len(test))]
+for i in range(len(test) // batch_size):
+    batch = test[i * batch_size: min((i + 1) * batch_size, len(test))]
     inputs = processor(images=batch['image'], text=batch['prompt'], padding=True, return_tensors="pt").to(
         model.device)
-    print({k: v.shape for k, v in inputs.items()})
+    # print({k: v.shape for k, v in inputs.items()})
     generate_ids = model.generate(**inputs, max_new_tokens=256, pad_token_id=processor.tokenizer.eos_token_id)
     outputs = processor.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)
 
     for idx, output in enumerate(outputs):
-        # print(batch)
+        # print(output)
         print(f'\nImage {cnt}, filename: {batch["filename"][idx]}')
-        response = output.split('[/INST]')[-1].strip()
+        response = output.split('[/INST]')[-1].split('<\s>')[0].strip()
         predictions.append(response)
         references.append(batch["caption"][idx])
         print(f'Response:\n{response}')
         print(f'Caption:\n{batch["caption"][idx][0]}')
         cnt += 1
-
 
 # Evaluate
 bleu = evaluate.load("bleu")
