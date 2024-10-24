@@ -1,10 +1,11 @@
 #!/bin/bash
-#SBATCH --account=ACCOUNT_NAME
+#SBATCH --account=YOUR_ACCOUNT_NAME
 #SBATCH --partition=gpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
-#SBATCH --gpus-per-task=a40:1
+#SBATCH --gpus-per-task=a100:1
+#SBATCH --constraint=a100-80gb
 #SBATCH --mem=8G
 #SBATCH --time=12:00:00
 #SBATCH --mail-type=end,fail
