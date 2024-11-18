@@ -1,5 +1,6 @@
 import json
 import os
+import random
 from datetime import datetime
 
 import torch
@@ -87,7 +88,7 @@ def augment_data(examples):
     augmented_images = []
     for image, captions in zip(examples["image"], examples["caption"]):
         # for caption in captions:
-        augmented_captions.append(captions[0])
+        augmented_captions.append(captions[random.randint(0, len(captions) - 1)])
         augmented_images.append(image)
     return {"augmented_image": augmented_images, "augmented_caption": augmented_captions}
 
@@ -149,7 +150,7 @@ training_args = SFTConfig(
     logging_steps=10,
     # save_strategy="epoch",
     # evaluation_strategy="steps",
-    optim="adamw_torch",  # adamw_torch
+    optim="adamw_torch",  # adamw_8bit
     weight_decay=0.01,
     lr_scheduler_type="linear",
     output_dir=output_model,
