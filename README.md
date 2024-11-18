@@ -1,4 +1,4 @@
-# Efficient Image-to-Text Summarization using Small Language Models through Knowledge Distillation
+# Efficient Image Captioning using Small Language Models through Knowledge Distillation
 Image captioning using small-sized LLaVA-NeXT with knowledge distillation.
 
 ## Installation
@@ -9,9 +9,9 @@ Image captioning using small-sized LLaVA-NeXT with knowledge distillation.
     ```
 2. Set up a conda environment and install all the packages:
    ```angular2html
-    conda create -n vllm_env python=3.10
+    conda create -n vllm_env python=3.10 pytorch-cuda=12.1 pytorch cudatoolkit -c pytorch -c nvidia
     conda activate vllm_env
-    pip install -r requirements.txt
+    pip install trl peft accelerate bitsandbytes evaluate pillow
     ```
 ## Scripts
 ### Inference

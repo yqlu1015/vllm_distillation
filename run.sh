@@ -11,8 +11,6 @@
 #SBATCH --mail-type=end,fail
 #SBATCH --mail-user=YOUR_EMAIL_ADDRESS
 module purge
-module load gcc/11.3.0
-module load cuda/11.8.0
 eval "$(conda shell.bash hook)"
 conda activate vllm_env
 
