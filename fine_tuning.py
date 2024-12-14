@@ -18,7 +18,10 @@ LR = 1e-5
 BATCH_SIZE = 1
 GRADIENT_ACCUMULATION_STEPS = 8
 MAX_LENGTH = 256
-output_model = datetime.now().strftime(f"sft-llava-v1.6-mistral-7b_%m-%d-%H-%M")
+output_model = datetime.now().strftime(f"/project/vsharan_1298/llava_models/sft-llava-v1.6-7b_%m-%d-%H-%M")
+base_model = "llava-hf/llava-v1.6-mistral-7b-hf"
+# output_model = datetime.now().strftime(f"/project/vsharan_1298/llava_models/sft-llava-v1.6-34b_%m-%d-%H-%M")
+# base_model = "llava-hf/llava-v1.6-34b-hf"
 
 # Use wandb for logging
 wandb.init(
@@ -37,9 +40,13 @@ quantization_config = BitsAndBytesConfig(
 
 # Load the model in half-precision
 model = LlavaNextForConditionalGeneration.from_pretrained(
-    "llava-hf/llava-v1.6-mistral-7b-hf",
-    torch_dtype=torch.float16, device_map="auto")
-processor = AutoProcessor.from_pretrained("llava-hf/llava-v1.6-mistral-7b-hf")
+    base_model,
+    torch_dtype=torch.float16,
+    device_map="auto",
+    attn_implementation="flash_attention_2",
+    # quantization_config=quantization_config,
+)
+processor = AutoProcessor.from_pretrained(base_model)
 processor.tokenizer.padding_side = "right"
 model.padding_side = 'right'
 
@@ -123,15 +130,18 @@ def collate_fn(examples):
     images = [example['augmented_image'] for example in examples]
 
     # Tokenize the texts and process the images
-    batch = processor(images=images, text=texts, return_tensors="pt", padding=True, truncation=True,
-                      max_length=MAX_LENGTH)
+    # batch = processor(images=images, text=texts, return_tensors="pt", padding=True, truncation=True,
+    #                   max_length=MAX_LENGTH)  # todo: larger max_length or not specify?
+    batch = processor(images=images, text=texts, return_tensors="pt", padding=True)
+    # print(batch['input_ids'].size())
+    # print(processor.tokenizer.batch_decode(batch['input_ids'], skip_special_tokens=True))
 
     # The labels are the input_ids, and we mask the padding tokens in the loss computation
     labels = batch["input_ids"].clone()
     labels[labels == processor.tokenizer.pad_token_id] = -100
     # # Ignore the image token index in the loss computation (model specific)
-    # image_token_id = processor.tokenizer.convert_tokens_to_ids(processor.image_token)
-    # labels[labels == image_token_id] = -100
+    image_token_id = processor.tokenizer.convert_tokens_to_ids(processor.image_token)
+    labels[labels == image_token_id] = -100
     batch["labels"] = labels
 
     return batch

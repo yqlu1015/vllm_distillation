@@ -8,10 +8,10 @@ Image captioning using small-sized LLaVA-NeXT with knowledge distillation.
     cd vllm_distillation
     ```
 2. Set up a conda environment and install all the packages:
-   ```angular2html
-    conda create -n vllm_env python=3.10 pytorch-cuda=12.1 pytorch cudatoolkit -c pytorch -c nvidia
+    ```angular2html
+    conda create -n vllm_env python=3.10 pytorch-cuda=12.1 pytorch torchvision cudatoolkit -c pytorch -c nvidia
     conda activate vllm_env
-    pip install trl peft accelerate bitsandbytes evaluate pillow
+    pip install -r requirements.txt
     ```
 ## Scripts
 ### Inference

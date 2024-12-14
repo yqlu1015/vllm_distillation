@@ -1,19 +1,37 @@
+import numpy as np
 import torch
-from transformers import AutoProcessor, LlavaNextForConditionalGeneration
+from transformers import AutoProcessor, LlavaNextForConditionalGeneration, BitsAndBytesConfig
 from datasets import load_dataset
-import evaluate
+from evaluate import load
 from peft import PeftModel
 from torch.utils.data import DataLoader
 
 PEFT_INFERENCE = True  # Inference using the fine-tuned model or not
 
+quantization_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.float16,
+    # load_in_8bit=True,
+)
+
 # Load the model in half-precision
 model_name = "llava-hf/llava-v1.6-mistral-7b-hf"
-model = LlavaNextForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.float16, device_map="auto")
+# model_name = "llava-hf/llava-v1.6-34b-hf"
+model = LlavaNextForConditionalGeneration.from_pretrained(
+    model_name,
+    torch_dtype=torch.float16,
+    device_map="auto",
+    # low_cpu_mem_usage=True,
+    attn_implementation="flash_attention_2",
+    quantization_config=quantization_config,
+)
 processor = AutoProcessor.from_pretrained(model_name)
 processor.tokenizer.padding_side = "left"
+print(f"max_length: {processor.tokenizer.model_max_length}")
 if PEFT_INFERENCE:
-    lora_adapter = "sft-llava-v1.6-mistral-7b_10-24-03-46"  # Path to the fine-tuned adapter
+    lora_adapter = "/project/vsharan_1298/544/vllm_distillation-main_1024/sft-llava-v1.6-mistral-7b_11-18-12-11"  # Path to the fine-tuned adapter
+    # lora_adapter = "/project/vsharan_1298/llava_models/sft-llava-v1.6-34b_11-18-18-13"
     model = PeftModel.from_pretrained(model, lora_adapter)
 
 # Load & preprocess dataset
@@ -71,6 +89,7 @@ for i in range(len(test) // batch_size):
         # print(output)
         print(f'\nImage {cnt}, filename: {batch["filename"][idx]}')
         response = output.split('[/INST]')[-1].split('<\s>')[0].strip()
+        # response = output.split('assistant')[-1].strip()
         predictions.append(response)
         references.append(batch["caption"][idx])
         print(f'Response:\n{response}')
@@ -78,6 +97,12 @@ for i in range(len(test) // batch_size):
         cnt += 1
 
 # Evaluate
-bleu = evaluate.load("bleu")
-results = bleu.compute(predictions=predictions, references=references)
-print(results)
+bleu, rouge, bertscore = load("bleu"), load('rouge'), load("bertscore")
+bleu_res = bleu.compute(predictions=predictions, references=references)
+rouge_res = rouge.compute(predictions=predictions, references=references)
+bertscore_res = bertscore.compute(predictions=predictions, references=references, lang='en')
+precision_avg, recall_avg, f1_avg = np.mean(bertscore_res['precision']), np.mean(bertscore_res['recall']), np.mean(
+    bertscore_res['f1'])
+bert_res = {'average precision': precision_avg, 'average recall': recall_avg, 'average f1': f1_avg}
+print(f"BLEU:\n{bleu_res}\nROUGE:\n{rouge_res}")
+print(f"BERT-SCORE:\n{bert_res}")
