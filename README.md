@@ -22,7 +22,7 @@ python inference.py
 ### Fine-tuning (SFT)
 1. Directly run the script:
    ```angular2html
-   python fine-tuing.py
+   python fine_tuning.py
    ```
 2. Submit a slurm job (e.g. on CARC server):
    ```angular2html
