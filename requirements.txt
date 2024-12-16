@@ -8,3 +8,5 @@ bert-score
 absl-py
 nltk
 rouge_score>=0.1.2
+wandb
+flash_attn
