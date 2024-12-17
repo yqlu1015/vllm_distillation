@@ -1,5 +1,6 @@
-# Efficient Image Captioning using Small Language Models through Knowledge Distillation
-Image captioning using small-sized LLaVA-NeXT with knowledge distillation.
+# Distilling Small Language Models with Structured Reasoning
+Visual Question Answering (VQA) done by [Moondream 2B](https://github.com/vikhyat/moondream) with structured reasoning distillation from [LLaVA-CoT](https://github.com/PKU-YuanGroup/LLaVA-CoT).
+Code for fine-tuning [LLaVA-NeXT](https://llava-vl.github.io/blog/2024-01-30-llava-next/) on image captioning is also included.
 
 ## Installation
 1. Clone the repository and navigate to the repository root directory:
@@ -16,15 +17,20 @@ Image captioning using small-sized LLaVA-NeXT with knowledge distillation.
 ## Scripts
 ### Inference
 ```angular2html
-python inference.py
+python moondream_inference.py
 ```
 
 ### Fine-tuning (SFT)
 1. Directly run the script:
    ```angular2html
-   python fine_tuning.py
+   python moondream_ft.py
    ```
-2. Submit a slurm job (e.g. on CARC server):
+2. Submit a slurm job:
    ```angular2html
    sbatch run.sh
+   ```
+
+### Structured Visual Reasoning Distillation
+```angular2html
+   python moondream_distillation.py
    ```
